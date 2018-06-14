@@ -89,6 +89,19 @@ public class DelegationTokenAuthenticationFilter implements ContainerRequestFilt
       return;
     }
 
+    String lensDelegationToken = requestContext.getHeaderString(AuthTokenIdentifier.AUTH_TOKEN_TYPE.toString());
+    if (StringUtils.isNotBlank(lensDelegationToken)) {
+      Token<AuthTokenIdentifier> tkn = new Token<>();
+      tkn.decodeFromUrlString(lensDelegationToken);
+      AuthTokenIdentifier authTokenIdentifier = tkn.decodeIdentifier();
+      if (authTokenIdentifier.expirationDate < System.currentTimeMillis()) {
+        throw new NotAuthorizedException(Response.status(401).entity("Delegation token expired").build());
+      }
+      String userName = authTokenIdentifier.getUser().getUserName();
+      requestContext.setSecurityContext(createSecurityContext(userName, AUTH_SCHEME));
+      return;
+    }
+
     String delegationToken = requestContext.getHeaderString(HDFS_DELEGATION_TKN_HEADER);
     if (StringUtils.isBlank(delegationToken)) {
       return;

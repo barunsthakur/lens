@@ -38,9 +38,20 @@ import org.apache.hadoop.security.token.TokenIdentifier;
  */
 public class DelegationTokenClientFilter implements ClientRequestFilter {
   private static final String DELEGATION_TKN_KIND = "HDFS_DELEGATION_TOKEN";
+  private static final String LENS_DELEGATION_TKN_KIND = "LENS_AUTH_TOKEN";
 
   @Override
   public void filter(ClientRequestContext requestContext) throws IOException {
+    Optional<Token<? extends TokenIdentifier>> lensDelegationToken = UserGroupInformation
+      .getLoginUser().getTokens().stream()
+      .filter(tkn -> tkn.getKind().toString().equals(LENS_DELEGATION_TKN_KIND))
+      .findFirst();
+
+    if (lensDelegationToken.isPresent()) {
+      requestContext.getHeaders().add(LENS_DELEGATION_TKN_KIND, lensDelegationToken.get().encodeToUrlString());
+      return;
+    }
+
     Optional<Token<? extends TokenIdentifier>> hdfsDelegationToken = UserGroupInformation
       .getLoginUser().getTokens().stream()
       .filter(tkn -> tkn.getKind().toString().equals(DELEGATION_TKN_KIND))
