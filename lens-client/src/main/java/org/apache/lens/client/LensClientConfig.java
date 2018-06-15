@@ -68,6 +68,8 @@ public class LensClientConfig extends Configuration {
 
   public static final String DEFAULT_LOG_RESOURCE_PATH = "logs";
 
+  public static final String DEFAULT_DELEGATION_TOKEN_RESOURCE_PATH = "delegation_token";
+
   // server side conf properties copied here
   /** The Constant SERVER_BASE_URL. */
   public static final String SERVER_BASE_URL = "lens.server.base.url";
@@ -189,4 +191,7 @@ public class LensClientConfig extends Configuration {
 
   public static final boolean DEFAULT_SSL_IGNORE_SERVER_CERT_VALUE = true;
 
+  public String getDelegationTokenResourcePath() {
+    return DEFAULT_DELEGATION_TOKEN_RESOURCE_PATH;
+  }
 }

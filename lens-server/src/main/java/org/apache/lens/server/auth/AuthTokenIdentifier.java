@@ -19,36 +19,38 @@
 
 package org.apache.lens.server.auth;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.security.token.TokenIdentifier;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.TokenIdentifier;
+
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+@ToString
 @Getter
 @Setter
 public class AuthTokenIdentifier extends TokenIdentifier {
-  public static final Text AUTH_TOKEN_TYPE = new Text("LENS_AUTH_TOKEN");
+  public static final Text AUTH_TOKEN_TYPE = new Text("LENS_DELEGATION_TOKEN");
 
-  protected String username;
-  protected int keyId;
+  protected Text username;
   protected long issueDate;
   protected long expirationDate;
 
   public AuthTokenIdentifier() {}
 
   public AuthTokenIdentifier(String username) {
-    this.username = username;
+    this.username = new Text(username);
   }
 
-  public AuthTokenIdentifier(String username, int keyId, long issueDate, long expirationDate) {
-    this.username = username;
-    this.keyId = keyId;
+  public AuthTokenIdentifier(String username, long issueDate, long expirationDate) {
+    this.username = new Text(username);
     this.issueDate = issueDate;
     this.expirationDate = expirationDate;
   }
@@ -60,19 +62,23 @@ public class AuthTokenIdentifier extends TokenIdentifier {
 
   @Override
   public UserGroupInformation getUser() {
-    if (StringUtils.isBlank(username)) {
+    if (username == null || StringUtils.isBlank(username.toString())) {
       return null;
     }
-    return UserGroupInformation.createRemoteUser(username);
+    return UserGroupInformation.createRemoteUser(username.toString());
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    //TODO(Barun): Implement this
+    username.write(out);
+    WritableUtils.writeVLong(out, issueDate);
+    WritableUtils.writeVLong(out, expirationDate);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    //TODO(Barun): Implement this
+    username.readFields(in);
+    issueDate = WritableUtils.readVLong(in);
+    expirationDate = WritableUtils.readVLong(in);
   }
 }

@@ -16,9 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.lens.oozie;
+package org.apache.lens.client.oozie;
 
-import org.apache.hadoop.conf.Configuration;
+import org.apache.lens.client.LensDelegationTokenClient;
+
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
@@ -27,20 +28,14 @@ import org.apache.oozie.action.hadoop.Credentials;
 import org.apache.oozie.action.hadoop.CredentialsProperties;
 
 public class LensCredentials extends Credentials {
-
-  private static final Configuration CONF = new Configuration(false);
-  static {
-    CONF.addResource("lens-client-site.xml");
-  }
+  private static final LensDelegationTokenClient CLIENT = new LensDelegationTokenClient();
 
   @Override
   public void addtoJobConf(JobConf jobConf, CredentialsProperties credentialsProperties, Context context)
     throws Exception {
-
     Token<? extends TokenIdentifier> dt = new Token<>();
-    String delegationToken = null;
+    String delegationToken = CLIENT.getDelegationToken(context.getWorkflow().getUser());
     dt.decodeFromUrlString(delegationToken);
-
     jobConf.getCredentials().addToken(dt.getService(), dt);
   }
 }
