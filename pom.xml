@@ -1871,6 +1871,7 @@
     <module>lens-regression</module>
     <module>lens-ui</module>
     <module>contrib</module>
+      <module>lens-oozie</module>
   </modules>
 
   <profiles>

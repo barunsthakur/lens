@@ -42,6 +42,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.SecretManager;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier;
 
@@ -66,6 +67,8 @@ public class DelegationTokenAuthenticationFilter implements ContainerRequestFilt
   private static final Path PATH_TO_CHECK = new Path(
           CONF.get(LensConfConstants.DELEGATION_TOKEN_AUTH_HDFS_PATH_TO_CHECK));
 
+  private static final AuthTokenSecretManager SECRET_MANAGER = new AuthTokenSecretManager();
+
   private ResourceInfo resourceInfo;;
 
   @Context
@@ -86,6 +89,21 @@ public class DelegationTokenAuthenticationFilter implements ContainerRequestFilt
     }
     if (!(resourceInfo.getResourceClass().isAnnotationPresent(Authenticate.class)
       || resourceInfo.getResourceMethod().isAnnotationPresent(Authenticate.class))) {
+      return;
+    }
+
+    String lensDelegationToken = requestContext.getHeaderString(AuthTokenIdentifier.AUTH_TOKEN_TYPE.toString());
+    if (StringUtils.isNotBlank(lensDelegationToken)) {
+      Token<AuthTokenIdentifier> tkn = new Token<>();
+      tkn.decodeFromUrlString(lensDelegationToken);
+      AuthTokenIdentifier authTokenIdentifier = tkn.decodeIdentifier();
+      try {
+        SECRET_MANAGER.verifyToken(authTokenIdentifier, tkn.getPassword());
+      } catch (SecretManager.InvalidToken e) {
+        throw new NotAuthorizedException(Response.status(401).entity(e.getMessage()).build());
+      }
+      String userName = authTokenIdentifier.getUser().getUserName();
+      requestContext.setSecurityContext(createSecurityContext(userName, AUTH_SCHEME));
       return;
     }
 

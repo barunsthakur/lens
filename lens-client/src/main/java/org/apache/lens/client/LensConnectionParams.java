@@ -137,6 +137,10 @@ public class LensConnectionParams {
     return this.conf.getLogResourcePath();
   }
 
+  public String getDelegationTokenResourcePath() {
+    return this.conf.getDelegationTokenResourcePath();
+  }
+
   public long getQueryPollInterval() {
     return this.conf.getQueryPollInterval();
   }
